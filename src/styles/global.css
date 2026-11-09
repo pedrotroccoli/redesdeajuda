@@ -1,0 +1,1141 @@
+:root {
+  /* Marca (paleta Contas Online): verde + amarelo */
+  --verde: #014c3c;
+  --verde-mid: #00654e;
+  --verde-hover: #008060;
+  --verde-100: #daf1e6;
+  --verde-50: #f2f8f5;
+  --amarelo: #f1bb02;
+  --amarelo-hover: #ffd40f;
+  --amarelo-claro: #fef3c7;
+
+  --gov: #2563eb;
+  --ong: #f59e0b;
+  --ink: #252531;
+  --paper: #ffffff;
+  --muted: #656992;
+  --line: #ececf2;
+  --surface: #f2f6f4;
+
+  --header-h: 64px; /* 8px grid */
+
+  /* Espaçamento: grid de 8px (4px = meio-passo) */
+  --s1: 0.25rem; /* 4px */
+  --s2: 0.5rem; /* 8px */
+  --s3: 1rem; /* 16px */
+  --s4: 1.5rem; /* 24px */
+  --s5: 2rem; /* 32px */
+
+  /* Cantos: máximo 4px */
+  --r: 4px;
+
+  /* Tipografia (rem, mínimo 14px = 0.875rem) */
+  --fs-sm: 0.875rem; /* 14px — mínimo */
+  --fs-base: 1rem; /* 16px */
+  --fs-md: 1.125rem; /* 18px */
+  --fs-lg: 1.25rem; /* 20px */
+
+  --font-head: 'Plus Jakarta Sans Variable', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  color: var(--ink);
+}
+
+h1,
+h2,
+h3,
+.site-header__title,
+.triagem__title,
+.panel__title,
+.plano__title {
+  font-family: var(--font-head);
+}
+
+/* Cabeçalho */
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: var(--header-h);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 0 var(--s3);
+  background: var(--verde);
+  color: #fff;
+  box-shadow: 0 1px 8px rgba(1, 76, 60, 0.3);
+}
+
+.site-header__mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--verde-hover), var(--amarelo));
+  flex: 0 0 auto;
+}
+
+.site-header__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.site-header__sub {
+  font-size: var(--fs-sm);
+  color: #cbd5e1;
+  margin-left: var(--s1);
+}
+
+.header-cta {
+  margin-left: auto;
+  padding: var(--s2) var(--s3);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--verde);
+  background: var(--amarelo);
+  border: none;
+  border-radius: var(--r);
+  cursor: pointer;
+}
+
+.header-cta:hover {
+  background: var(--amarelo-hover);
+}
+
+.map-wrapper {
+  position: fixed;
+  inset: var(--header-h) 0 0 0;
+}
+
+/* Modal "Seja parceiro" (centralizado) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s3);
+  background: rgba(1, 76, 60, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  padding: var(--s4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 12px 40px rgba(1, 76, 60, 0.25);
+}
+
+.field {
+  display: block;
+  margin-bottom: var(--s3);
+}
+
+.field__label {
+  display: block;
+  margin-bottom: var(--s1);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.field__input {
+  width: 100%;
+  padding: var(--s2) var(--s3);
+  font-size: var(--fs-base);
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--verde-mid);
+}
+
+.field__cep {
+  display: block;
+  margin-top: var(--s1);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.field__cep:empty {
+  display: none;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  background: #dde6ec;
+}
+
+/* Cartões / painéis */
+.panel,
+.triagem,
+.plano {
+  position: absolute;
+  z-index: 500;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 6px 24px rgba(1, 76, 60, 0.12);
+}
+
+.panel {
+  top: var(--s3);
+  right: var(--s3);
+  width: 224px;
+  max-height: calc(100% - var(--s5));
+  overflow-y: auto;
+  padding: var(--s3);
+}
+
+.panel__title {
+  margin: 0 0 var(--s2);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* Triagem (esquerda) */
+.triagem {
+  top: var(--s3);
+  left: var(--s3);
+  width: 288px;
+  max-height: calc(100% - var(--s5));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.triagem__title {
+  margin: 0;
+  padding: var(--s3) var(--s3) var(--s1);
+  font-size: var(--fs-md);
+  letter-spacing: -0.01em;
+}
+
+.triagem__hint {
+  margin: 0;
+  padding: 0 var(--s3) var(--s2);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.btn-geo {
+  margin: 0 var(--s3) var(--s2);
+  padding: var(--s2) var(--s3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: #fff;
+  background: var(--verde-mid);
+  border: none;
+  border-radius: var(--r);
+  cursor: pointer;
+}
+
+.btn-geo:hover {
+  filter: brightness(1.05);
+}
+
+.btn-geo:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-geo.is-on {
+  background: var(--verde);
+}
+
+.needs {
+  overflow-y: auto;
+  padding: 0 var(--s2);
+}
+
+.need {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2);
+  border-radius: var(--r);
+  cursor: pointer;
+  user-select: none;
+}
+
+.need:hover {
+  background: var(--surface);
+}
+
+.need input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--verde-mid);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.need:has(input:checked) {
+  background: var(--verde-100);
+}
+
+.need__icon {
+  font-size: var(--fs-lg);
+  flex: 0 0 auto;
+}
+
+.need__label {
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+}
+
+.triagem__footer {
+  padding: var(--s2) var(--s3);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.triagem__result {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.btn-clear {
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  padding: var(--s1) var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: #fff;
+  cursor: pointer;
+}
+
+.btn-clear:hover {
+  background: var(--surface);
+}
+
+/* Botão Adicionar no popup */
+.pp__add {
+  display: block;
+  width: 100%;
+  margin-top: var(--s2);
+  padding: var(--s2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--verde);
+  background: var(--amarelo);
+  border: none;
+  border-radius: var(--r);
+  cursor: pointer;
+}
+
+.pp__add.is-in {
+  background: var(--verde-mid);
+  color: #fff;
+}
+
+/* Plano de visita (inferior direito) */
+.plano {
+  right: var(--s3);
+  bottom: var(--s3);
+  width: 272px;
+  max-height: 45%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.plano__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s3) var(--s3) var(--s2);
+}
+
+.plano__title {
+  margin: 0;
+  font-size: var(--fs-base);
+}
+
+.plano__limpar {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.plano__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--s2);
+  overflow-y: auto;
+}
+
+.plano__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2);
+  border-radius: var(--r);
+}
+
+.plano__item:hover {
+  background: var(--surface);
+}
+
+.plano__num {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: #fff;
+  background: var(--ink);
+  border-radius: var(--r);
+}
+
+.plano__nome {
+  flex: 1;
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plano__km {
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.plano__rm {
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+}
+
+.plano__rota {
+  margin: var(--s1) var(--s3) 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--verde-mid);
+}
+
+.plano__rota:empty {
+  display: none;
+}
+
+.btn-gerar {
+  margin: var(--s2) var(--s3) var(--s3);
+  padding: var(--s2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--verde);
+  background: var(--amarelo);
+  border: none;
+  border-radius: var(--r);
+  cursor: pointer;
+}
+
+.btn-gerar:hover {
+  background: var(--amarelo-hover);
+}
+
+.btn-gerar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-pdf {
+  margin: 0 var(--s3) var(--s3);
+  padding: var(--s2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: #fff;
+  background: var(--verde);
+  border: none;
+  border-radius: var(--r);
+  cursor: pointer;
+}
+
+.btn-pdf:hover {
+  background: var(--verde-mid);
+}
+
+.btn-limpar {
+  margin: 0 var(--s3) var(--s3);
+  padding: var(--s2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--muted);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  cursor: pointer;
+}
+
+.btn-limpar:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+/* Legenda (direita) */
+.legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s1) 0;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.legend__label {
+  flex: 1;
+  font-size: var(--fs-sm);
+}
+
+.legend__count {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel__total {
+  margin: var(--s2) 0 0;
+  padding-top: var(--s2);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.panel__total strong {
+  color: var(--ink);
+  font-size: var(--fs-base);
+}
+
+/* Marcadores do mapa (círculos) */
+.marker-pin__dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.marker-user__dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--verde);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px var(--verde), 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Card do ponto (estilo place/event card) */
+.card {
+  min-width: 248px;
+}
+
+.card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+
+.card__badge {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r);
+}
+
+.card__meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.card__title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: var(--fs-base);
+  line-height: 1.2;
+}
+
+.card__sub {
+  margin: 2px 0 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.card__ok,
+.card__pend {
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.card__ok {
+  color: var(--verde-mid);
+}
+
+.card__pend {
+  color: #b45309;
+}
+
+.card__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.card__row {
+  display: flex;
+  gap: var(--s2);
+  align-items: flex-start;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+
+.card__row a {
+  color: var(--verde-mid);
+  font-weight: 600;
+}
+
+.card__ic {
+  flex: 0 0 auto;
+}
+
+.card__docs {
+  padding: var(--s2);
+  background: var(--verde-50);
+  border-radius: var(--r);
+}
+
+.card__precisa {
+  padding: var(--s2);
+  background: var(--amarelo-claro);
+  border-radius: var(--r);
+}
+
+.card__actions {
+  display: flex;
+  gap: var(--s2);
+  margin-top: var(--s3);
+}
+
+.card__btn {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s1);
+  padding: var(--s2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  border-radius: var(--r);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.card__btn--primary {
+  color: var(--verde);
+  background: var(--amarelo);
+  border: none;
+}
+
+.card__btn--primary.is-in {
+  color: #fff;
+  background: var(--verde-mid);
+}
+
+.card__btn--ghost {
+  color: var(--verde);
+  background: #fff;
+  border: 1px solid var(--verde-mid);
+}
+
+.card__fonte {
+  margin-top: var(--s2);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+/* Popup antigo (sem uso) */
+.pp__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.pp__tag {
+  display: inline-block;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r);
+}
+
+.pp__ok {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--verde-mid);
+}
+
+.pp__pend {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: #b45309;
+}
+
+.pp__nome {
+  margin: var(--s2) 0;
+  font-size: var(--fs-base);
+}
+
+.pp__docs {
+  margin-top: var(--s1);
+  padding: var(--s2);
+  background: var(--surface);
+  border-radius: var(--r);
+}
+
+.pp__row {
+  font-size: var(--fs-sm);
+  color: #334155;
+  margin: var(--s1) 0;
+}
+
+.pp__fonte {
+  margin-top: var(--s2);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+/* Impressão */
+#plano-print {
+  display: none;
+}
+
+@media print {
+  .site-header,
+  .map-wrapper {
+    display: none !important;
+  }
+  #plano-print {
+    display: block;
+    padding: var(--s4);
+    color: #000;
+    font-size: 11pt;
+  }
+  #plano-print h1 {
+    font-size: 18pt;
+    margin: 0 0 var(--s1);
+  }
+  .pr__meta {
+    color: #444;
+    margin: 0 0 var(--s3);
+  }
+  .pr__list {
+    padding-left: var(--s3);
+  }
+  .pr__list li {
+    margin-bottom: var(--s2);
+    page-break-inside: avoid;
+  }
+  .pr__h {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s3);
+  }
+  .pr__rota {
+    margin-top: var(--s3);
+    word-break: break-all;
+    font-size: 9pt;
+    color: #333;
+  }
+  .pr__nota {
+    margin-top: var(--s2);
+    font-size: 9pt;
+    color: #666;
+  }
+}
+
+/* Onboarding — bottom sheet */
+.sheet-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(1, 76, 60, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  height: 72vh; /* altura fixa: não muda ao trocar de passo */
+  display: flex;
+  flex-direction: column;
+  margin: 0 var(--s2);
+  padding: var(--s4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r) var(--r) 0 0;
+  box-shadow: 0 -8px 32px rgba(1, 76, 60, 0.2);
+  animation: sheet-up 0.25s ease;
+}
+
+/* Cada passo preenche a mesma altura; o conteúdo rola se precisar */
+.sheet__step {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+}
+
+/* Enquanto o onboarding está aberto, some com os painéis flutuantes */
+.onboarding .triagem,
+.onboarding .panel {
+  display: none;
+}
+
+/* Desktop: vira modal centralizado (sem cara de bottom sheet) */
+@media (min-width: 768px) {
+  .sheet-overlay {
+    align-items: center;
+  }
+  .sheet {
+    max-width: 480px;
+    margin: 0;
+    height: min(600px, 85vh);
+    border-radius: var(--r);
+  }
+}
+
+/* Puxador: só no mobile (bottom sheet). No desktop é modal, sem puxador. */
+.sheet__grab {
+  display: none;
+  width: 40px;
+  height: 4px;
+  border-radius: var(--r);
+  background: #d5d6e2;
+  margin: 0 auto var(--s3);
+}
+
+.sheet__mark {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r);
+  background: linear-gradient(135deg, var(--verde-hover), var(--amarelo));
+  margin-bottom: var(--s3);
+}
+
+.sheet__link {
+  display: block;
+  width: 100%;
+  margin-top: var(--s2);
+  padding: var(--s2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.sheet__link:hover {
+  color: var(--ink);
+}
+
+.sheet__back {
+  color: var(--verde-mid);
+}
+
+.sheet__title {
+  margin: 0 0 var(--s1);
+  font-size: var(--fs-lg);
+  letter-spacing: -0.01em;
+}
+
+.sheet__sub {
+  margin: 0 0 var(--s4);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.chips {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--s2);
+  margin-bottom: var(--s4);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: var(--s2) var(--s3);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--verde-mid);
+}
+
+.chip.is-on {
+  color: #fff;
+  background: var(--verde);
+  border-color: var(--verde);
+}
+
+.sheet__go {
+  width: 100%;
+  margin-top: auto; /* fixa o botão embaixo em qualquer passo */
+  padding: var(--s3);
+  font-size: var(--fs-base);
+  font-weight: 700;
+  color: var(--verde);
+  background: var(--amarelo);
+  border: none;
+  border-radius: var(--r);
+  cursor: pointer;
+}
+
+.sheet__go:hover {
+  background: var(--amarelo-hover);
+}
+
+.sheet__go:disabled {
+  color: var(--muted);
+  background: var(--line);
+  cursor: default;
+}
+
+/* Botão secundário (mesmo tamanho, estilo outline) */
+.sheet__go--outline {
+  margin-top: var(--s2);
+  color: var(--verde);
+  background: #fff;
+  border: 1px solid var(--verde-mid);
+}
+
+.sheet__go--outline:hover {
+  background: var(--verde-50);
+}
+
+/* Voltar no topo do passo */
+.sheet__topback {
+  align-self: flex-start;
+  margin-bottom: var(--s3);
+  padding: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--verde-mid);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.sheet__topback:hover {
+  color: var(--verde);
+}
+
+/* Controles do Leaflet seguem o mesmo raio (máx 4px) */
+.leaflet-bar,
+.leaflet-bar a:first-child,
+.leaflet-bar a:last-child,
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  border-radius: var(--r) !important;
+}
+
+/* Botão fechar do drawer (aparece ao reabrir) */
+.sheet__close {
+  position: absolute;
+  top: var(--s3);
+  right: var(--s3);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-base);
+  color: var(--muted);
+  background: var(--surface);
+  border: none;
+  border-radius: var(--r);
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* Pílulas flutuantes (só mobile) */
+.mobilebar {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--s3) + env(safe-area-inset-bottom));
+  z-index: 600;
+  gap: var(--s2);
+  align-items: center;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: #fff;
+  background: var(--verde);
+  border: none;
+  border-radius: var(--r);
+  box-shadow: 0 6px 20px rgba(1, 76, 60, 0.3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pill--plan {
+  color: var(--verde);
+  background: var(--amarelo);
+}
+
+.pill__count {
+  min-width: 20px;
+  padding: 0 var(--s1);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--verde);
+  background: var(--amarelo);
+  border-radius: var(--r);
+}
+
+.pill__count--light {
+  color: var(--amarelo);
+  background: var(--verde);
+}
+
+.plano__fechar {
+  display: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-base);
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .sheet__grab {
+    display: block;
+  }
+  /* Drawer ocupa 100% da largura, colado nas bordas */
+  .sheet {
+    margin: 0;
+    max-width: 100%;
+  }
+  /* Painéis flutuantes somem; as pílulas assumem */
+  .triagem,
+  .panel {
+    display: none;
+  }
+  .mobilebar {
+    display: flex;
+  }
+  /* Com algum drawer aberto, esconde as pílulas */
+  .onboarding .mobilebar,
+  .plano-open .mobilebar {
+    display: none;
+  }
+
+  /* Plano vira drawer inferior, aberto pela pílula "Finalizar" */
+  .plano {
+    display: none !important;
+    position: absolute;
+    inset: auto 0 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 80%;
+    border-radius: var(--r) var(--r) 0 0;
+    z-index: 1400;
+  }
+  .plano-open .plano {
+    display: flex !important;
+  }
+  .plano__fechar {
+    display: block;
+  }
+}

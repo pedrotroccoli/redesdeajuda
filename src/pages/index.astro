@@ -1,0 +1,35 @@
+---
+import MapView from '../components/MapView.astro';
+// Fontes self-hosted (sem request externo): Inter (texto) + Plus Jakarta (títulos).
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource-variable/plus-jakarta-sans';
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redes de Apoio — assistência social no Brasil</title>
+    <meta
+      name="description"
+      content="Mapa das unidades de assistência social (governo e ONGs) e redes de apoio no Brasil."
+    />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+  </head>
+  <body>
+    <header class="site-header">
+      <span class="site-header__mark" aria-hidden="true"></span>
+      <h1 class="site-header__title">Redes de Apoio</h1>
+      <button type="button" class="header-cta" data-open-parceiro>🤝 Seja parceiro</button>
+    </header>
+
+    <main>
+      <MapView />
+    </main>
+  </body>
+</html>

@@ -1,0 +1,855 @@
+---
+import { readFileSync } from 'node:fs';
+import { CATEGORIAS } from '../categorias';
+import { NECESSIDADES } from '../necessidades';
+import type { Unidade } from '../types';
+
+// Lê no build só p/ contar a legenda. O dado é servido de /unidades.json
+// (public/) e carregado em runtime via fetch — não entra no bundle JS.
+const unidades = JSON.parse(
+  readFileSync(new URL('../../public/unidades.json', import.meta.url), 'utf8')
+) as Unidade[];
+const parceiros = JSON.parse(
+  readFileSync(new URL('../../public/parceiros.json', import.meta.url), 'utf8')
+) as Unidade[];
+const todos = [...unidades, ...parceiros];
+
+const total = todos.length;
+const contagem = Object.fromEntries(
+  CATEGORIAS.map((c) => [c.id, todos.filter((u) => u.categoria === c.id).length])
+);
+// Esconde da legenda as categorias ainda sem dados.
+const categoriasComDados = CATEGORIAS.filter((c) => (contagem[c.id] as number) > 0);
+---
+
+<div class="map-wrapper">
+  <div id="map" role="application" aria-label="Mapa da rede de apoio"></div>
+
+  <!-- Triagem: o que a pessoa precisa -->
+  <aside class="triagem" aria-label="O que você precisa">
+    <h2 class="triagem__title">O que você precisa?</h2>
+    <p class="triagem__hint">Marque uma ou mais opções.</p>
+
+    <button type="button" class="btn-geo" data-geo>
+      <span aria-hidden="true">📍</span> Usar minha localização
+    </button>
+
+    <div class="needs">
+      {
+        NECESSIDADES.map((n) => (
+          <label class="need">
+            <input type="checkbox" data-need={n.id} data-cats={n.categorias.join(',')} />
+            <span class="need__icon" aria-hidden="true">{n.icone}</span>
+            <span class="need__label">{n.label}</span>
+          </label>
+        ))
+      }
+    </div>
+
+    <div class="triagem__footer">
+      <p class="triagem__result" data-result>Mostrando todos os pontos.</p>
+      <button type="button" class="btn-clear" data-clear hidden>Limpar</button>
+    </div>
+  </aside>
+
+  <!-- Legenda de cores -->
+  <aside class="panel" aria-label="Legenda">
+    <h2 class="panel__title">Tipos de serviço</h2>
+    <div class="legend">
+      {
+        categoriasComDados.map((c) => (
+          <div class="legend__item">
+            <span class="dot" style={`background:${c.cor}`} aria-hidden="true" />
+            <span class="legend__label" title={c.nome}>{c.label}</span>
+            <span class="legend__count">{contagem[c.id]}</span>
+          </div>
+        ))
+      }
+    </div>
+    <p class="panel__total"><strong data-count="total">{total}</strong> pontos no total</p>
+  </aside>
+
+  <!-- Plano de visita (aparece quando há pontos adicionados) -->
+  <aside class="plano" data-plano aria-label="Plano de visita" hidden>
+    <div class="plano__head">
+      <h2 class="plano__title">Plano de visita (<span data-plano-count>0</span>)</h2>
+      <button type="button" class="plano__fechar" data-plano-close aria-label="Fechar">✕</button>
+    </div>
+    <ul class="plano__list" data-plano-list></ul>
+    <p class="plano__rota" data-rota-info></p>
+    <button type="button" class="btn-gerar" data-gerar disabled>🗺️ Gerar plano (ver caminho)</button>
+    <button type="button" class="btn-pdf" data-pdf hidden>📄 Gerar PDF</button>
+    <button type="button" class="btn-limpar" data-limpar-plano>Limpar plano</button>
+  </aside>
+
+  <!-- Pílulas flutuantes (só mobile) -->
+  <nav class="mobilebar" aria-label="Ações">
+    <button type="button" class="pill" data-open-sheet>
+      <span aria-hidden="true">🔎</span> O que você precisa?
+      <span class="pill__count" data-need-count hidden></span>
+    </button>
+    <button type="button" class="pill pill--plan" data-open-plano hidden>
+      <span aria-hidden="true">🧾</span> Finalizar plano
+      <span class="pill__count pill__count--light" data-plano-pill-count>0</span>
+    </button>
+  </nav>
+
+  <!-- Onboarding / drawer: bottom sheet em 2 passos (necessidades → localização). -->
+  <div class="sheet-overlay" data-sheet>
+    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <button type="button" class="sheet__close" data-sheet-close hidden aria-label="Fechar">✕</button>
+      <span class="sheet__grab" aria-hidden="true"></span>
+
+      <!-- Passo 1: necessidades -->
+      <div class="sheet__step" data-step="1">
+        <span class="sheet__mark" aria-hidden="true"></span>
+        <h2 class="sheet__title" id="sheet-title">O que você precisa hoje?</h2>
+        <p class="sheet__sub">Marque uma ou mais opções. Vamos mostrar no mapa os lugares que atendem você.</p>
+
+        <div class="chips">
+          {
+            NECESSIDADES.map((n) => (
+              <button type="button" class="chip" data-chip={n.id}>
+                <span aria-hidden="true">{n.icone}</span> {n.label}
+              </button>
+            ))
+          }
+        </div>
+
+        <button type="button" class="sheet__go" data-step1-next disabled>Continuar</button>
+      </div>
+
+      <!-- Passo 2: localização -->
+      <div class="sheet__step" data-step="2" hidden>
+        <button type="button" class="sheet__topback" data-step2-back>← Voltar</button>
+        <span class="sheet__mark" aria-hidden="true"></span>
+        <h2 class="sheet__title">Onde você está?</h2>
+        <p class="sheet__sub">Mostramos os lugares mais perto de você e o caminho até lá. Sua localização fica só no seu aparelho — nada é salvo.</p>
+
+        <button type="button" class="sheet__go" data-step2-geo>📍 Usar minha localização</button>
+        <button type="button" class="sheet__go sheet__go--outline" data-step2-skip>Pular por agora</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal "Seja parceiro" -->
+  <div class="modal-overlay" data-parceiro hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="parc-title">
+      <button type="button" class="sheet__close" data-parceiro-close aria-label="Fechar">✕</button>
+      <span class="sheet__mark" aria-hidden="true"></span>
+      <h2 class="sheet__title" id="parc-title">Seja parceiro da rede</h2>
+      <p class="sheet__sub">Quer doar, oferecer um serviço ou encaminhar famílias? Deixe seu contato que a coordenação da rede fala com você.</p>
+
+      <form data-parceiro-form>
+        <label class="field">
+          <span class="field__label">Seu nome</span>
+          <input class="field__input" name="nome" type="text" required autocomplete="name" />
+        </label>
+        <label class="field">
+          <span class="field__label">Seu CEP</span>
+          <input class="field__input" name="cep" type="text" inputmode="numeric" required pattern="\d{5}-?\d{3}" placeholder="00000-000" autocomplete="postal-code" />
+          <span class="field__cep" data-cep-status aria-live="polite"></span>
+        </label>
+        <label class="field">
+          <span class="field__label">Endereço</span>
+          <input class="field__input" name="endereco" type="text" placeholder="Preenchido pelo CEP" />
+        </label>
+        <button type="submit" class="sheet__go">Enviar pelo WhatsApp</button>
+      </form>
+    </section>
+  </div>
+</div>
+
+<!-- Área de impressão (só aparece no PDF) -->
+<div id="plano-print" aria-hidden="true"></div>
+
+<script>
+  import L from 'leaflet';
+  import 'leaflet.markercluster';
+  import 'leaflet/dist/leaflet.css';
+  import 'leaflet.markercluster/dist/MarkerCluster.css';
+  import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+  import brasil from '../data/br-brasil.json';
+  import { CATEGORIA_POR_ID } from '../categorias';
+  import type { CategoriaId } from '../categorias';
+  import type { Unidade } from '../types';
+
+  // Contorno do Brasil (1 MultiPolygon). Usado p/ bounds, máscara e borda.
+  const brasilLayer = L.geoJSON(brasil as any);
+  const BRASIL_BOUNDS = brasilLayer.getBounds();
+
+  const map = L.map('map', {
+    center: BRASIL_BOUNDS.getCenter(),
+    zoom: 4,
+    minZoom: 4,
+    maxZoom: 18, // zoom até nível de rua para chegar no serviço
+    // Sem maxBounds: ele re-centra ao soltar o pan ("puxão"). A máscara já
+    // esconde os vizinhos, então pan livre só revela cinza — sem puxão.
+  });
+  map.fitBounds(BRASIL_BOUNDS, { padding: [10, 10] });
+  map.attributionControl.setPrefix(false); // remove a logo/link do Leaflet
+  map.zoomControl.setPosition('bottomleft'); // sai de baixo do painel de triagem
+
+  // Exposto só em dev para QA (removido no build de produção).
+  if (import.meta.env.DEV) (window as any)._map = map;
+
+  // Basemap de ruas (OSM). Crédito mínimo obrigatório pela licença (sem link).
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Máscara: cobre tudo FORA do Brasil (esconde países vizinhos).
+  // Polígono mundo com buracos no formato do Brasil → só o Brasil mostra tiles.
+  const feature: any = (brasil as any).features[0];
+  const multi: number[][][][] = feature.geometry.coordinates; // [poly][ring][pt][lng,lat]
+  const buracos: L.LatLngTuple[][] = multi.map((poly) =>
+    poly[0].map(([lng, lat]) => [lat, lng] as L.LatLngTuple)
+  );
+  const mundo: L.LatLngTuple[] = [
+    [-89, -179],
+    [-89, 179],
+    [89, 179],
+    [89, -179],
+  ];
+  L.polygon([mundo, ...buracos], {
+    stroke: false,
+    fillColor: '#dde6ec',
+    fillOpacity: 1,
+    interactive: false,
+  }).addTo(map);
+
+  // Borda sutil do Brasil por cima.
+  L.geoJSON(brasil as any, {
+    style: { color: '#94a3b8', weight: 1, fill: false },
+    interactive: false,
+  }).addTo(map);
+
+  function iconePara(categoria: CategoriaId): L.DivIcon {
+    const cor = CATEGORIA_POR_ID[categoria]?.cor ?? '#64748b';
+    return L.divIcon({
+      className: 'marker-pin',
+      html: `<span class="marker-pin__dot" style="background:${cor}"></span>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+      popupAnchor: [0, -9],
+    });
+  }
+
+  function escapeHtml(s: string): string {
+    return s.replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!
+    );
+  }
+
+  function linha(icone: string, valor: string | null, extra = ''): string {
+    if (!valor) return '';
+    return `<div class="card__row"><span class="card__ic" aria-hidden="true">${icone}</span><span>${extra || escapeHtml(valor)}</span></div>`;
+  }
+
+  function popupHtml(u: Unidade): string {
+    const cat = CATEGORIA_POR_ID[u.categoria];
+    const cor = cat?.cor ?? '#64748b';
+    const selo = u.verificado
+      ? '<span class="card__ok">✓ verificado</span>'
+      : '<span class="card__pend">a confirmar</span>';
+    const telLink = u.telefone
+      ? `<a href="tel:${u.telefone.replace(/[^0-9+]/g, '')}">${escapeHtml(u.telefone)}</a>`
+      : '';
+    const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${u.lat},${u.lng}&travelmode=walking`;
+    return `
+      <div class="card">
+        <div class="card__top">
+          <span class="card__badge" style="background:${cor}" aria-hidden="true"></span>
+          <div class="card__meta">
+            <h3 class="card__title">${escapeHtml(u.nome)}</h3>
+            <p class="card__sub">${escapeHtml(cat?.label ?? u.categoria)} · ${escapeHtml(u.municipio)}/${escapeHtml(u.uf)}</p>
+          </div>
+          ${selo}
+        </div>
+
+        <div class="card__rows">
+          ${linha('📍', u.endereco)}
+          ${linha('📞', u.telefone, telLink)}
+          ${linha('🕐', u.horario)}
+          ${linha('👥', u.atende)}
+          ${linha('🧑‍💼', u.contato ?? null)}
+          ${linha('🤝', u.oferece ?? null)}
+          ${u.precisa ? `<div class="card__row card__precisa"><span class="card__ic" aria-hidden="true">📥</span><span>Precisa: ${escapeHtml(u.precisa)}</span></div>` : ''}
+          ${u.documentos ? `<div class="card__row card__docs"><span class="card__ic" aria-hidden="true">📄</span><span>Levar: ${escapeHtml(u.documentos)}</span></div>` : ''}
+        </div>
+
+        <div class="card__actions">
+          <button type="button" class="card__btn card__btn--primary" data-add="${escapeHtml(u.id)}">Adicionar ao plano</button>
+          <a class="card__btn card__btn--ghost" href="${gmaps}" target="_blank" rel="noopener">🗺️ Como chegar</a>
+        </div>
+        <div class="card__fonte">Fonte: ${escapeHtml(u.fonte)}</div>
+      </div>`;
+  }
+
+  // Um cluster por categoria + registro plano (p/ filtrar por marcador).
+  const clusters = {} as Record<CategoriaId, L.MarkerClusterGroup>;
+  const registros: { u: Unidade; marker: L.Marker }[] = [];
+
+  const resultEl = document.querySelector('[data-result]');
+  const clearBtn = document.querySelector<HTMLButtonElement>('[data-clear]');
+  const geoBtn = document.querySelector<HTMLButtonElement>('[data-geo]');
+
+  // Cores dos trechos do caminho (ciclam se tiver muitos pontos).
+  const CORES_TRECHO = [
+    '#2563eb', '#16a34a', '#ea580c', '#db2777',
+    '#7c3aed', '#0891b2', '#ca8a04', '#dc2626',
+  ];
+  const corTrecho = (i: number) => CORES_TRECHO[i % CORES_TRECHO.length];
+
+  // Plano de visita: unidades que a pessoa escolheu.
+  const plano = new Map<string, Unidade>();
+  const planoList = document.querySelector('[data-plano-list]');
+  const planoCount = document.querySelector('[data-plano-count]');
+  const planoPanel = document.querySelector('[data-plano]');
+  const gerarBtn = document.querySelector<HTMLButtonElement>('[data-gerar]');
+  const limparPlanoBtn = document.querySelector<HTMLButtonElement>('[data-limpar-plano]');
+  const openPlanoBtn = document.querySelector<HTMLButtonElement>('[data-open-plano]');
+  const planoCloseBtn = document.querySelector<HTMLButtonElement>('[data-plano-close]');
+  const planoPillCount = document.querySelector('[data-plano-pill-count]');
+
+  // Mobile: abre/fecha o plano como drawer (via pílula flutuante).
+  openPlanoBtn?.addEventListener('click', () => document.body.classList.add('plano-open'));
+  planoCloseBtn?.addEventListener('click', () => document.body.classList.remove('plano-open'));
+
+  // Localização do usuário (opcional). Fica só no navegador — nada é enviado.
+  // Anéis concêntricos: 2 km (verde), 5 km (laranja), 10 km (laranja escuro).
+  const RAIOS: [number, string][] = [
+    [2000, '#16a34a'],
+    [5000, '#f59e0b'],
+    [10000, '#c2410c'],
+  ];
+  const RAIO_FILTRO = 10000; // filtra pelos pontos dentro do anel externo
+  let userPos: L.LatLng | null = null;
+  let userMarker: L.Marker | null = null;
+  let raioCircles: L.Circle[] = [];
+
+  function categoriasSelecionadas(): Set<CategoriaId> {
+    const sel = new Set<CategoriaId>();
+    document
+      .querySelectorAll<HTMLInputElement>('input[data-need]:checked')
+      .forEach((inp) => {
+        (inp.dataset.cats || '').split(',').forEach((c) => c && sel.add(c as CategoriaId));
+      });
+    return sel;
+  }
+
+  function recompute() {
+    const sel = categoriasSelecionadas();
+    const mostrarTodas = sel.size === 0;
+    const porCat = {} as Record<CategoriaId, L.Marker[]>;
+    let visiveis = 0;
+
+    for (const { u, marker } of registros) {
+      const passaNecessidade = mostrarTodas || sel.has(u.categoria);
+      const passaRaio = !userPos || map.distance(marker.getLatLng(), userPos) <= RAIO_FILTRO;
+      if (passaNecessidade && passaRaio) {
+        (porCat[u.categoria] ||= []).push(marker);
+        visiveis++;
+      }
+    }
+
+    for (const cat of Object.keys(clusters) as CategoriaId[]) {
+      clusters[cat].clearLayers();
+      const ms = porCat[cat];
+      if (ms && ms.length) {
+        clusters[cat].addLayers(ms);
+        clusters[cat].addTo(map);
+      } else {
+        map.removeLayer(clusters[cat]);
+      }
+    }
+
+    const sufixo = userPos ? ' num raio de 10 km' : '';
+    if (resultEl) {
+      if (mostrarTodas && !userPos) {
+        resultEl.textContent = 'Mostrando todos os pontos.';
+      } else if (visiveis === 0) {
+        resultEl.textContent = `Nenhum ponto encontrado${sufixo}.`;
+      } else {
+        resultEl.textContent = `${visiveis} ${visiveis === 1 ? 'ponto' : 'pontos'}${sufixo}.`;
+      }
+    }
+    if (clearBtn) clearBtn.hidden = mostrarTodas && !userPos;
+  }
+
+  function adicionarUnidades(lista: Unidade[]) {
+    for (const u of lista) {
+      if (u.lat == null || u.lng == null) continue;
+      if (!clusters[u.categoria]) {
+        clusters[u.categoria] = L.markerClusterGroup({ maxClusterRadius: 45 });
+      }
+      const marker = L.marker([u.lat, u.lng], { icon: iconePara(u.categoria) });
+      marker.bindPopup(popupHtml(u), { maxWidth: 300, minWidth: 248 });
+      marker.on('popupopen', (e) => {
+        const btn = (e.popup.getElement() as HTMLElement)?.querySelector<HTMLButtonElement>('[data-add]');
+        if (!btn) return;
+        const sync = () => {
+          const dentro = plano.has(u.id);
+          btn.textContent = dentro ? '✓ No plano — remover' : 'Adicionar ao plano';
+          btn.classList.toggle('is-in', dentro);
+        };
+        sync();
+        btn.onclick = () => {
+          if (plano.has(u.id)) plano.delete(u.id);
+          else plano.set(u.id, u);
+          sync();
+          renderPlano();
+        };
+      });
+      registros.push({ u, marker });
+    }
+  }
+
+  // Carrega em runtime: serviços (CNES) + parceiros da rede (curado) — fora do bundle.
+  const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const carregar = (arq: string) =>
+    fetch(`${BASE}/${arq}`).then((r) => r.json()).catch(() => []);
+  Promise.all([carregar('unidades.json'), carregar('parceiros.json')]).then(
+    ([servicos, parc]: [Unidade[], Unidade[]]) => {
+      adicionarUnidades(servicos);
+      adicionarUnidades(parc);
+      recompute();
+    }
+  );
+
+  // Triagem: marcar/desmarcar necessidades.
+  document.querySelectorAll<HTMLInputElement>('input[data-need]').forEach((input) => {
+    input.addEventListener('change', recompute);
+  });
+
+  // Onboarding (bottom sheet) em 2 passos: necessidades → localização.
+  const sheet = document.querySelector<HTMLElement>('[data-sheet]');
+  const step1 = document.querySelector<HTMLElement>('[data-step="1"]');
+  const step2 = document.querySelector<HTMLElement>('[data-step="2"]');
+  const step1Next = document.querySelector<HTMLButtonElement>('[data-step1-next]');
+  const step2Geo = document.querySelector<HTMLButtonElement>('[data-step2-geo]');
+  const step2Skip = document.querySelector<HTMLButtonElement>('[data-step2-skip]');
+  const step2Back = document.querySelector<HTMLButtonElement>('[data-step2-back]');
+  const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-chip]'));
+
+  const sheetClose = document.querySelector<HTMLButtonElement>('[data-sheet-close]');
+  const openSheetBtn = document.querySelector<HTMLButtonElement>('[data-open-sheet]');
+  const needCount = document.querySelector<HTMLElement>('[data-need-count]');
+  let onboardingDone = false;
+
+  // Começa em modo onboarding (painéis laterais escondidos).
+  document.body.classList.add('onboarding');
+
+  function atualizarNavCount() {
+    const n = document.querySelectorAll('input[data-need]:checked').length;
+    if (needCount) {
+      needCount.textContent = String(n);
+      needCount.hidden = n === 0;
+    }
+  }
+
+  // Fechar sempre liberado: dá pra dispensar e ver todos os pontos.
+  if (sheetClose) sheetClose.hidden = false;
+
+  function abrirSheet() {
+    if (sheet) sheet.hidden = false;
+    document.body.classList.add('onboarding');
+    mostrarPasso(1);
+  }
+  function fecharSheet() {
+    onboardingDone = true;
+    if (sheet) sheet.hidden = true;
+    document.body.classList.remove('onboarding');
+  }
+  function mostrarPasso(n: 1 | 2) {
+    if (step1) step1.hidden = n !== 1;
+    if (step2) step2.hidden = n !== 2;
+  }
+
+  openSheetBtn?.addEventListener('click', abrirSheet);
+  sheetClose?.addEventListener('click', fecharSheet);
+  // Tocar fora do cartão também fecha.
+  sheet?.addEventListener('click', (e) => {
+    if (e.target === sheet) fecharSheet();
+  });
+
+  // Passo 1: chips de necessidade (espelha nos checkboxes do painel).
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const id = chip.dataset.chip!;
+      const on = chip.classList.toggle('is-on');
+      const input = document.querySelector<HTMLInputElement>(`input[data-need="${id}"]`);
+      if (input) input.checked = on;
+      const algum = chips.some((c) => c.classList.contains('is-on'));
+      if (step1Next) step1Next.disabled = !algum;
+      atualizarNavCount();
+      recompute();
+    });
+  });
+  step1Next?.addEventListener('click', () => mostrarPasso(2));
+  step2Back?.addEventListener('click', () => mostrarPasso(1));
+  step2Skip?.addEventListener('click', fecharSheet);
+  step2Geo?.addEventListener('click', () => {
+    step2Geo.disabled = true;
+    step2Geo.textContent = 'Buscando localização…';
+    pedirLocalizacao(fecharSheet); // fecha ao terminar (sucesso ou falha)
+  });
+  clearBtn?.addEventListener('click', () => {
+    document
+      .querySelectorAll<HTMLInputElement>('input[data-need]:checked')
+      .forEach((inp) => (inp.checked = false));
+    recompute();
+  });
+
+  // Localização: pega do navegador, desenha "você aqui" + círculo de 20 km.
+  const userIcon = L.divIcon({
+    className: 'marker-user',
+    html: '<span class="marker-user__dot"></span>',
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  });
+
+  function limparLocalizacao() {
+    userPos = null;
+    if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+    raioCircles.forEach((c) => map.removeLayer(c));
+    raioCircles = [];
+    if (geoBtn) {
+      geoBtn.classList.remove('is-on');
+      geoBtn.innerHTML = '<span aria-hidden="true">📍</span> Usar minha localização';
+    }
+    recompute();
+    desenharRota();
+  }
+
+  // Aplica a posição: marcador "você aqui" + anéis + refiltra.
+  function aplicarLocalizacao(lat: number, lng: number) {
+    userPos = L.latLng(lat, lng);
+    userMarker = L.marker(userPos, { icon: userIcon, zIndexOffset: 1000 })
+      .bindPopup('Você está aqui')
+      .addTo(map);
+    raioCircles = [...RAIOS]
+      .reverse()
+      .map(([radius, cor]) =>
+        L.circle(userPos!, {
+          radius,
+          color: cor,
+          weight: 2,
+          fillColor: cor,
+          fillOpacity: 0.06,
+          interactive: false,
+        }).addTo(map)
+      );
+    map.fitBounds(raioCircles[0].getBounds(), { padding: [20, 20] });
+    if (geoBtn) {
+      geoBtn.disabled = false;
+      geoBtn.classList.add('is-on');
+      geoBtn.innerHTML = '<span aria-hidden="true">✕</span> Remover localização';
+    }
+    recompute();
+    desenharRota();
+  }
+
+  // Pede a localização ao navegador. onDone roda no fim (sucesso ou falha).
+  function pedirLocalizacao(onDone?: () => void) {
+    if (!navigator.geolocation) {
+      if (resultEl) resultEl.textContent = 'Seu navegador não tem localização.';
+      onDone?.();
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        aplicarLocalizacao(pos.coords.latitude, pos.coords.longitude);
+        onDone?.();
+      },
+      () => {
+        if (resultEl) resultEl.textContent = 'Não consegui pegar sua localização.';
+        onDone?.();
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  geoBtn?.addEventListener('click', () => {
+    if (userPos) { limparLocalizacao(); return; }
+    geoBtn.disabled = true;
+    geoBtn.textContent = 'Buscando localização…';
+    pedirLocalizacao();
+  });
+
+  // ---------- Plano de visita ----------
+  let rotaGroup: L.LayerGroup | null = null;
+
+  function origem(): L.LatLng {
+    // De onde parte o roteiro: localização do usuário, senão o 1º adicionado.
+    if (userPos) return userPos;
+    const primeiro = plano.values().next().value as Unidade | undefined;
+    return primeiro ? L.latLng(primeiro.lat, primeiro.lng) : map.getCenter();
+  }
+
+  // Vizinho mais próximo encadeado: parte de você, vai ao ponto mais perto,
+  // de lá ao próximo mais perto, e assim por diante até visitar todos.
+  function ordenarPlano(): Unidade[] {
+    const restantes = [...plano.values()];
+    const ordem: Unidade[] = [];
+    let atual = origem();
+    while (restantes.length) {
+      let melhor = 0;
+      let menor = Infinity;
+      for (let i = 0; i < restantes.length; i++) {
+        const d = map.distance([restantes[i].lat, restantes[i].lng], atual);
+        if (d < menor) { menor = d; melhor = i; }
+      }
+      const prox = restantes.splice(melhor, 1)[0];
+      ordem.push(prox);
+      atual = L.latLng(prox.lat, prox.lng);
+    }
+    return ordem;
+  }
+
+  // Distância de cada trecho (do ponto anterior, começando em você).
+  function trechos(ordenado: Unidade[]): number[] {
+    const km: number[] = [];
+    let prev = origem();
+    for (const u of ordenado) {
+      km.push(map.distance([u.lat, u.lng], prev) / 1000);
+      prev = L.latLng(u.lat, u.lng);
+    }
+    return km;
+  }
+
+  function renderPlano() {
+    if (planoCount) planoCount.textContent = String(plano.size);
+    if (planoPanel) (planoPanel as HTMLElement).hidden = plano.size === 0;
+    if (gerarBtn) gerarBtn.disabled = plano.size === 0;
+    // Pílula "Finalizar plano" (mobile): aparece quando há pontos.
+    if (openPlanoBtn) openPlanoBtn.hidden = plano.size === 0;
+    if (planoPillCount) planoPillCount.textContent = String(plano.size);
+    if (plano.size === 0) document.body.classList.remove('plano-open');
+    if (!planoList) return;
+    const ordenado = ordenarPlano();
+    const km = userPos ? trechos(ordenado) : null;
+    planoList.innerHTML = ordenado
+      .map((u, i) => {
+        const dist = km ? `<span class="plano__km" title="distância deste trecho">+${km[i].toFixed(1)} km</span>` : '';
+        return `<li class="plano__item">
+          <span class="plano__num" style="background:${corTrecho(i)}">${i + 1}</span>
+          <span class="plano__nome">${escapeHtml(u.nome)}</span>
+          ${dist}
+          <button type="button" class="plano__rm" data-rm="${escapeHtml(u.id)}" title="Remover">✕</button>
+        </li>`;
+      })
+      .join('');
+    planoList.querySelectorAll<HTMLButtonElement>('[data-rm]').forEach((btn) => {
+      btn.onclick = () => {
+        plano.delete(btn.dataset.rm!);
+        renderPlano();
+      };
+    });
+    desenharRota(); // atualiza o caminho no mapa a cada mudança do plano
+    // Plano mudou: esconde o PDF até o usuário revisar o caminho de novo.
+    const pdf = document.querySelector<HTMLButtonElement>('[data-pdf]');
+    if (pdf) pdf.hidden = true;
+  }
+
+  function linkGoogleMaps(ordenado: Unidade[]): string {
+    const o = origem();
+    const dest = ordenado[ordenado.length - 1];
+    const meio = ordenado.slice(0, -1).map((u) => `${u.lat},${u.lng}`).join('|');
+    const p = new URLSearchParams({
+      api: '1',
+      origin: `${o.lat},${o.lng}`,
+      destination: `${dest.lat},${dest.lng}`,
+      travelmode: 'walking',
+    });
+    if (meio) p.set('waypoints', meio);
+    return `https://www.google.com/maps/dir/?${p.toString()}`;
+  }
+
+  interface Rota {
+    legs: [number, number][][]; // coords [lng,lat] por trecho
+    distancia: number; // metros
+    duracao: number; // segundos
+  }
+
+  async function rotaOSRM(pontos: L.LatLng[]): Promise<Rota | null> {
+    // Caminho real pelas ruas (a pé). Só coords públicas + origem vão ao OSRM.
+    try {
+      const coords = pontos.map((p) => `${p.lng},${p.lat}`).join(';');
+      const url = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=geojson&steps=true`;
+      const r = await fetch(url);
+      const d = await r.json();
+      if (d.code !== 'Ok') return null;
+      const rota = d.routes[0];
+      // Um trecho por perna (waypoint -> waypoint), juntando os passos.
+      const legs: [number, number][][] = (rota.legs as any[]).map((leg) =>
+        (leg.steps as any[]).flatMap((s) => s.geometry.coordinates as [number, number][])
+      );
+      return { legs, distancia: rota.distance, duracao: rota.duration };
+    } catch {
+      return null;
+    }
+  }
+
+  const rotaInfoEl = document.querySelector('[data-rota-info]');
+
+  // Desenha o caminho da localização até o destino final (passando pelas paradas).
+  // Cada trecho (você→1, 1→2, …) ganha uma cor própria, igual ao nº na lista.
+  async function desenharRota() {
+    if (rotaGroup) { map.removeLayer(rotaGroup); rotaGroup = null; }
+    if (plano.size === 0) {
+      if (rotaInfoEl) rotaInfoEl.textContent = '';
+      return;
+    }
+    if (!userPos) {
+      if (rotaInfoEl) rotaInfoEl.textContent = 'Ative sua localização para ver o caminho.';
+      return;
+    }
+    const ordenado = ordenarPlano();
+    const pontos = [userPos, ...ordenado.map((u) => L.latLng(u.lat, u.lng))];
+    if (rotaInfoEl) rotaInfoEl.textContent = 'Traçando caminho…';
+    const rota = await rotaOSRM(pontos);
+
+    // Coords [lat,lng] por trecho: do OSRM (ruas) ou reta como fallback.
+    const legsLatLng: L.LatLngExpression[][] = rota
+      ? rota.legs.map((leg) => leg.map(([lng, lat]) => [lat, lng] as L.LatLngExpression))
+      : pontos.slice(0, -1).map((p, i) => [
+          [p.lat, p.lng] as L.LatLngExpression,
+          [pontos[i + 1].lat, pontos[i + 1].lng] as L.LatLngExpression,
+        ]);
+
+    rotaGroup = L.layerGroup(
+      legsLatLng.map((coords, i) =>
+        L.polyline(coords, { color: corTrecho(i), weight: 5, opacity: 0.9 })
+      )
+    ).addTo(map);
+    const bounds = L.latLngBounds(legsLatLng.flat());
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40] });
+
+    if (rotaInfoEl) {
+      if (rota) {
+        const km = (rota.distancia / 1000).toFixed(1);
+        const min = Math.round(rota.duracao / 60);
+        rotaInfoEl.textContent = `🚶 ${km} km a pé · ~${min} min até o último ponto`;
+      } else {
+        rotaInfoEl.textContent = 'Caminho aproximado (linha reta).';
+      }
+    }
+  }
+
+  const pdfBtn = document.querySelector<HTMLButtonElement>('[data-pdf]');
+
+  // Passo 1: mostra o caminho no mapa e libera a opção de PDF.
+  async function gerarPlano() {
+    if (plano.size === 0) return;
+    await desenharRota();
+    if (pdfBtn) pdfBtn.hidden = false;
+  }
+
+  // Passo 2: monta e abre o PDF (só depois de ver o caminho).
+  function gerarPDF() {
+    if (plano.size === 0) return;
+    const ordenado = ordenarPlano();
+    montarImpressao(ordenado, linkGoogleMaps(ordenado));
+    window.print();
+  }
+
+  function montarImpressao(ordenado: Unidade[], gmaps: string) {
+    const area = document.getElementById('plano-print');
+    if (!area) return;
+    const needs = [...document.querySelectorAll<HTMLInputElement>('input[data-need]:checked')]
+      .map((i) => i.closest('.need')?.querySelector('.need__label')?.textContent?.trim())
+      .filter(Boolean);
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    const legs = userPos ? trechos(ordenado) : null;
+    const passos = ordenado
+      .map((u, i) => {
+        const km = legs ? ` (+${legs[i].toFixed(1)} km)` : '';
+        const cat = CATEGORIA_POR_ID[u.categoria];
+        return `<li>
+          <div class="pr__h"><b>${i + 1}. ${escapeHtml(u.nome)}</b> <span>${escapeHtml(cat?.label ?? '')}${km}</span></div>
+          <div>📍 ${escapeHtml(u.endereco)} — ${escapeHtml(u.municipio)}/${escapeHtml(u.uf)}</div>
+          ${u.telefone ? `<div>📞 ${escapeHtml(u.telefone)}</div>` : ''}
+          ${u.horario ? `<div>🕐 ${escapeHtml(u.horario)}</div>` : ''}
+          ${u.documentos ? `<div>📄 Levar: ${escapeHtml(u.documentos)}</div>` : ''}
+        </li>`;
+      })
+      .join('');
+    area.innerHTML = `
+      <h1>Plano de visita</h1>
+      <p class="pr__meta">Gerado em ${hoje}${needs.length ? ' · Necessidades: ' + needs.map((n) => escapeHtml(n!)).join(', ') : ''}</p>
+      <ol class="pr__list">${passos}</ol>
+      <p class="pr__rota">Rota no Google Maps: ${escapeHtml(gmaps)}</p>
+      <p class="pr__nota">Confirme horários e documentos por telefone antes de ir. Este guia não guarda nenhum dado seu.</p>`;
+  }
+
+  gerarBtn?.addEventListener('click', gerarPlano);
+  pdfBtn?.addEventListener('click', gerarPDF);
+  limparPlanoBtn?.addEventListener('click', () => {
+    plano.clear();
+    if (rotaGroup) { map.removeLayer(rotaGroup); rotaGroup = null; }
+    renderPlano();
+  });
+
+  // ---------- Seja parceiro ----------
+  // WhatsApp da coordenação da rede (trocar pelo número real).
+  const WHATSAPP_REDE = '5511900000001';
+  const parceiroModal = document.querySelector<HTMLElement>('[data-parceiro]');
+  const parceiroOpen = document.querySelector<HTMLButtonElement>('[data-open-parceiro]');
+  const parceiroClose = document.querySelector<HTMLButtonElement>('[data-parceiro-close]');
+  const parceiroForm = document.querySelector<HTMLFormElement>('[data-parceiro-form]');
+
+  parceiroOpen?.addEventListener('click', () => {
+    if (parceiroModal) parceiroModal.hidden = false;
+  });
+  parceiroClose?.addEventListener('click', () => {
+    if (parceiroModal) parceiroModal.hidden = true;
+  });
+  parceiroModal?.addEventListener('click', (e) => {
+    if (e.target === parceiroModal) parceiroModal.hidden = true;
+  });
+  // ViaCEP: ao digitar 8 dígitos, busca e preenche o endereço.
+  const cepInput = parceiroForm?.querySelector<HTMLInputElement>('[name="cep"]');
+  const enderecoInput = parceiroForm?.querySelector<HTMLInputElement>('[name="endereco"]');
+  const cepStatus = parceiroForm?.querySelector<HTMLElement>('[data-cep-status]');
+
+  async function buscarCep() {
+    if (!cepInput) return;
+    const cep = cepInput.value.replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    if (cepStatus) cepStatus.textContent = 'Buscando endereço…';
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const d = await r.json();
+      if (d.erro) {
+        if (cepStatus) cepStatus.textContent = 'CEP não encontrado.';
+        return;
+      }
+      const end = [d.logradouro, d.bairro].filter(Boolean).join(', ');
+      const cidade = [d.localidade, d.uf].filter(Boolean).join('/');
+      if (enderecoInput) enderecoInput.value = [end, cidade].filter(Boolean).join(' - ');
+      if (cepStatus) cepStatus.textContent = '';
+    } catch {
+      if (cepStatus) cepStatus.textContent = 'Não consegui buscar o CEP.';
+    }
+  }
+  cepInput?.addEventListener('blur', buscarCep);
+  cepInput?.addEventListener('input', () => {
+    if (cepInput.value.replace(/\D/g, '').length === 8) buscarCep();
+  });
+
+  parceiroForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const dados = new FormData(parceiroForm);
+    const nome = String(dados.get('nome') || '').trim();
+    const cep = String(dados.get('cep') || '').trim();
+    const endereco = String(dados.get('endereco') || '').trim();
+    const msg =
+      `Olá! Quero ser parceiro da Rede de Apoio.\nNome: ${nome}\nCEP: ${cep}` +
+      (endereco ? `\nEndereço: ${endereco}` : '');
+    window.open(`https://wa.me/${WHATSAPP_REDE}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    if (parceiroModal) parceiroModal.hidden = true;
+    parceiroForm.reset();
+  });
+</script>
