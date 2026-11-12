@@ -2,8 +2,8 @@
 import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
-// Site estático publicado no GitHub Pages (project page).
+// Site estático no GitHub Pages com domínio próprio (apex) → base na raiz.
 export default defineConfig({
-  site: 'https://pedrotroccoli.github.io',
-  base: '/redesdeajuda/',
+  site: 'https://redesdeapoio.com.br',
+  base: '/',
 });
